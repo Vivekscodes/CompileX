@@ -14,7 +14,7 @@ export const executeCode = async (language, sourceCode, input = "") => {
                 content: sourceCode
             }
         ],
-        stdin: input
+        stdin: input.replace(/\n/g, "\n"),
     })
     return res.data
 }
