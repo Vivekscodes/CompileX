@@ -1,47 +1,101 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import {v4 as uuidV4} from 'uuid'
-import { AuthContext } from '../context/AuthContext';
-import axios from 'axios';
+import React, { useContext, useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { v4 as uuidV4 } from "uuid";
+import { AuthContext } from "../context/AuthContext.jsx";
+import axios from "axios";
+import Navbar from "./Navbar/Navbar.jsx";
 
 const Home = () => {
-    const {user} = useContext(AuthContext);
-    const [snippets, setSnippets] = useState([])
+    const { user } = useContext(AuthContext);
+    const [snippets, setSnippets] = useState([]);
+    const [dropdownOpen, setDropdownOpen] = useState(null);
     const navigate = useNavigate();
     const handleClick = () => {
         const id = uuidV4();
-        navigate(`/editor/${id}`)
-    }
+        navigate(`/editor/${id}`);
+    };
     useEffect(() => {
         const getAllSnippets = async () => {
-
-            const snippets = await axios.get(`http://localhost:3000/api/snippet/user/${user._id}`)
-            setSnippets(snippets.data)
-        }
+            const snippets = await axios.get(
+                `http://localhost:3000/api/snippet/user/${user._id}`
+            );
+            setSnippets(snippets.data);
+        };
         getAllSnippets();
-    }, [])
-    console.log(snippets)
-  return (
-    <div>
-        <h1>Welcome to CompileX!</h1>
-        <p>This is a code compiler and executor for various programming languages.</p>
-        <p>Please select a language from the dropdown menu or click on a code snippet to start.</p>
-        <button onClick={handleClick}>New</button>
+    }, []);
 
-        {snippets.map(s => (
-            <Link to={`/editor/${s.codeId}`} key={s._id}>
-                <h3>{s.name}</h3>
-                <p>{s.language}</p>
-            </Link>
-        ))}
+    const toggleDropdown = (id) => {
+        setDropdownOpen((prev) => (prev === id ? null : id)); // Toggle dropdown for the given snippet
+    };
 
-        {user && <p>Logged in as {user.username}</p>}
+    return (
+        <div className="text-white">
+            <nav className="flex justify-between items-center px-10 py-4 bg-[#1E201E]">
+                <div>
+                    <h2 className="text-2xl font-bold">CompileX</h2>
+                </div>
+                <ul className="flex gap-x-5 list-style-none">
+                    <li className="hover:text-blue-400">
+                        <Link to="/">Home</Link>
+                    </li>
+                    <li onClick={handleClick} className="hover:text-blue-400">
+                        <Link>Code</Link>
+                    </li>
+                    <li className="hover:text-blue-400">
+                        <Link to="/contact">Contact Us</Link>
+                    </li>
+                    <li className="hover:text-blue-400">
+                        <Link to="/about">About</Link>
+                    </li>
+                </ul>
+                <ul className="flex gap-x-3">
+                    <li className="p-2 rounded bg-green-600">
+                        <Link to="/login">Login</Link>
+                    </li>
+                    <li className="p-2 rounded bg-blue-600">
+                        <Link to="/register">Register</Link>
+                    </li>
+                </ul>
+            </nav>
 
-        {!user && <p>Please log in to view your saved snippets.</p>}
+            <div className="flex justify-end pr-10 py-4">
+                <div
+                    onClick={handleClick}
+                    className="px-3 py-2 bg-orange-500 rounded-md cursor-pointer"
+                >
+                    <i class="ri-add-fill"></i>
+                    <button className="justify-end">New</button>
+                </div>
+            </div>
 
-        <p>Powered by <a href="https://github.com/compileX/compileX">CompileX</a></p>
-    </div>
-  )
-}
+            {snippets.map((s) => (
+                <div className="bg-blue-300/50 backdrop-blur-sm block mx-[5%] px-5 py-3 rounded-lg border-2 border-blue-600 flex items-end gap-x-3 justify-between mb-5 relative">
+                    <Link
+                        to={`/editor/${s.codeId}`}
+                        key={s._id}
+                        className="flex items-end gap-x-3"
+                    >
+                        <h3 className="font-semibold">{s.name}</h3>
+                        <small className="text-zinc-300">{s.language}</small>
+                    </Link>
+                    <button className="ri-more-2-fill" onClick={() => toggleDropdown(s._id)}></button>
 
-export default Home
+                    {dropdownOpen === s._id && (
+                        <div className="absolute right-[3%] bg-gray-700 p-1 rounded-md">
+                            <ul>
+                                <Link className="hover:bg-gray-800 cursor-pointer px-3 py-2 rounded-md block" to={`/editor/${s.codeId}`}>
+                                    Edit
+                                </Link>
+                                <li className="hover:bg-gray-800 cursor-pointer px-3 py-2 rounded-md">
+                                    Delete
+                                </li>
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+};
+
+export default Home;

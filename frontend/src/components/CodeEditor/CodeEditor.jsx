@@ -3,14 +3,15 @@ import Editor from "@monaco-editor/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 
-import LanguageSelector from "./LanguageSelector";
-import Share from "./Share";
-import { executeCode } from "../utils/execute";
-import { LANGUAGE_BOILERPLATES, LANGUAGE_VERSIONS } from "../utils/language";
-import { initSocket } from "../config/socket";
-import { ACTIONS } from "../Actions";
-import { AuthContext } from "../context/AuthContext";
+import LanguageSelector from "../LanguageSelector";
+import Share from "../Share";
+import { executeCode } from "../../utils/execute";
+import { LANGUAGE_BOILERPLATES, LANGUAGE_VERSIONS } from "../../utils/language";
+import { initSocket } from "../../config/socket";
+import { ACTIONS } from "../../Actions";
 import axios from "axios";
+import { AuthContext } from "../../context/AuthContext";
+// import "./CodeEditor.css";
 
 const CodeEditor = () => {
     const navigate = useNavigate();
@@ -22,12 +23,11 @@ const CodeEditor = () => {
     const [language, setLanguage] = useState(
         localStorage.getItem("selectedLanguage") || "javascript"
     );
+    const [share, setShare] = useState(true);
     const [value, setValue] = useState(
         localStorage.getItem("savedCode") || LANGUAGE_BOILERPLATES["javascript"]
     );
     const [programName, setProgramName] = useState(codeId);
-
-    
 
     const [output, setOutput] = useState("");
     const [userInput, setUserInput] = useState(
@@ -51,14 +51,13 @@ const CodeEditor = () => {
                 );
                 setValue(res.data.sourceCode);
                 setLanguage(res.data.language);
-                setProgramName(res.data.name)
+                setProgramName(res.data.name);
             } catch (error) {
                 toast.error("Error fetching code snippet");
             }
         };
         getSnippet();
     }, []);
-
 
     // Save code to localStorage whenever it changes
     useEffect(() => {
@@ -79,6 +78,7 @@ const CodeEditor = () => {
         editorRef.current = editor;
         editor.focus();
     };
+
     const run = async () => {
         setIsLoading(true);
         try {
@@ -94,6 +94,7 @@ const CodeEditor = () => {
                     userId: user._id
                 });
             } catch (e) {
+                console.error(e)
                 toast.error(e.response?.data?.message || "Couldn't save changes");
             }
             const res = await executeCode(
@@ -150,6 +151,7 @@ const CodeEditor = () => {
 
     const initSocketConnection = async () => {
         if (!user) return toast.error("Login to share code");
+
         socketRef.current = await initSocket();
 
         // Error handling
@@ -157,8 +159,7 @@ const CodeEditor = () => {
         socketRef.current.on("connect_failed", (err) => handleSocketError(err));
 
         // Join room
-        if (roomId && user.username) {
-            setUsername(user.username);
+        if (roomId && username) {
             socketRef.current.emit(ACTIONS.JOIN, { roomId, username });
         }
 
@@ -190,7 +191,7 @@ const CodeEditor = () => {
         socketRef.current.on(
             ACTIONS.JOINED,
             ({ clients, username: joinedUser }) => {
-                if (joinedUser !== user.username) {
+                if (joinedUser !== username) {
                     toast.success(`${joinedUser} joined the room`);
                 }
 
@@ -229,28 +230,82 @@ const CodeEditor = () => {
         <div>
             <Toaster position="top-right" />
             <div>
-                <h2>Collaborative Code Editor</h2>
+                <h2
+                    style={{
+                        textAlign: "center",
+                        color: "#F0F0F0",
+                        fontSize: "3rem",
+                        fontWeight: "bold",
+                    }}
+                >
+                    Collaborative Code Editor
+                </h2>
                 <div>
-                    <input
+                <input
                         type="text"
                         name="name"
                         value={programName}
                         onChange={(e) => setProgramName(e.target.value)}
+                        className="bg-gray-500 p-2"
                     />
-                    <button onClick={() => setIsOpen(!isOpen)}>
+                    <button
+                        style={{
+                            backgroundColor: "#4CAF50",
+                            color: "white",
+                            padding: "4px 25px",
+                            fontSize: "16px",
+                            margin: "10px",
+                            border: "none",
+                            borderRadius: "5px",
+                        }}
+                        onClick={() => {
+                            setIsOpen(!isOpen);
+                            setShare(!share);
+                        }}
+                    >
                         {isOpen ? "Close Share" : "Share"}
                     </button>
+
                     <LanguageSelector
                         onSelect={onSelect}
                         selectedLanguage={language}
                     />
-                    <button onClick={run} disabled={isLoading}>
+
+                    <button
+                        style={{
+                            backgroundColor: "#4CAF50",
+                            color: "white",
+                            padding: "4px 25px",
+                            fontSize: "16px",
+                            margin: "10px",
+                            border: "none",
+                            borderRadius: "5px",
+                            cursor: "pointer",
+                            boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+                            transition: "background-color 0.2s ease",
+                        }}
+                        onMouseEnter={(e) =>
+                            (e.target.style.backgroundColor = "#45a049")
+                        }
+                        onMouseLeave={(e) =>
+                            (e.target.style.backgroundColor = "#4CAF50")
+                        }
+                        onClick={run}
+                        disabled={isLoading}
+                    >
                         {isLoading ? "Running..." : "Run"}
                     </button>
                 </div>
 
                 <div style={{ display: "flex", width: "100%" }}>
-                    <div style={{ width: "70%", marginRight: "10px" }}>
+                    <div
+                        style={{
+                            width: "60%",
+                            marginRight: "10px",
+                            marginLeft: "10px",
+                            padding: "10px 20px 10px 10px",
+                        }}
+                    >
                         <Editor
                             height="75vh"
                             theme="vs-dark"
@@ -263,7 +318,7 @@ const CodeEditor = () => {
                             }}
                         />
                     </div>
-                    <div style={{ width: "30%" }}>
+                    <div style={{ width: "40%" }}>
                         <textarea
                             placeholder="User Input"
                             value={userInput}
@@ -271,14 +326,22 @@ const CodeEditor = () => {
                             style={{
                                 width: "100%",
                                 height: "30vh",
-                                marginBottom: "10px",
+                                marginBottom: "8px",
+                                borderRadius: "5px",
+                                border: "2px solid yellow",
                             }}
                         />
                         <textarea
                             readOnly
                             value={output}
                             placeholder="Output"
-                            style={{ width: "100%", height: "45vh" }}
+                            style={{
+                                width: "100%",
+                                height: "43vh",
+                                borderRadius: "5px",
+                                border: "2px solid yellow",
+                                overflow: "auto",
+                            }}
                         />
                     </div>
                 </div>

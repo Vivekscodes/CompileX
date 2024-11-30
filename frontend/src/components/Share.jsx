@@ -2,6 +2,10 @@ import toast, { Toaster } from "react-hot-toast";
 import { v4 as uuidV4 } from "uuid";
 
 const Share = ({ roomId, setRoomId, username, setUsername, init }) => {
+    // const [showShare, setShowShare] = useState(false);
+    const handleClick = () => {
+        setShowShare((prev) => !prev);
+    };
     const createNewRoom = (e) => {
         e.preventDefault();
         const newRoomId = uuidV4();
@@ -27,25 +31,88 @@ const Share = ({ roomId, setRoomId, username, setUsername, init }) => {
 
     return (
         <>
-            <div>
+            <div style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                flexDirection: "column",
+                padding: "10px",
+                border: "1px solid #ccc",
+                borderRadius: "10px",
+                // boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+                // backgroundColor: "gray",
+
+            }}>
+                <h1 style={{
+                    textAlign: "center",
+                    fontSize: "3.5rem",
+                    margin: "10px 0",
+                    fontWeight: "bold",
+                    color: "#4CAF50",
+                }}>Share code</h1>
                 <input
                     type="text"
+                    style={{
+                        width: "300px",
+                        padding: "10px",
+                        margin: "10px",
+                        border: "1px solid #ccc",
+                        borderRadius: "5px",
+                    }}
                     placeholder="Enter Room ID"
                     value={roomId}
                     onChange={(e) => setRoomId(e.target.value)}
                 />
                 <input
                     type="text"
+                    style={{
+                        width: "300px",
+                        padding: "10px",
+                        margin: "10px",
+                        border: "1px solid #ccc",
+                        borderRadius: "5px",
+                    }}
                     placeholder="Enter Username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                 />
-                <button onClick={init}>Join Room</button>
-                <small>
+                <button
+                    onClick={init}
+                    style={{
+                        backgroundColor: "#4CAF50",
+                        color: "white",
+                        padding: "10px",
+                        margin: "10px",
+                        border: "none",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                    }}
+                >
+                    Join Room
+                </button>
+                <small
+                    style={{
+                        fontSize: "18px",
+                        fontWeight: "bold",
+                        marginLeft: "10px",
+                        marginRight: "10px",
+                        color: "brown",
+                    }}
+                >
                     Don’t have a room? Create{" "}
                     <span
                         onClick={createNewRoom}
-                        style={{ cursor: "pointer", color: "blue" }}
+                        style={{
+                            color: "#007bff",
+                            cursor: "pointer",
+                            textDecoration: "underline",
+                            fontWeight: "bold",
+                            marginLeft: "5px",
+                            marginRight: "5px",
+                            display: "inline-block",
+                            fontSize: "20px",
+
+                        }}
                     >
                         a new room
                     </span>
