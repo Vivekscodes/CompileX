@@ -14,7 +14,13 @@ const userSchema = mongoose.Schema({
     password: {
         type: String,
         required: true
-    }
+    },
+    codes: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'CodeSnippets' // Reference to the CodeSnippets model
+        }
+    ]
 })
 
 module.exports = mongoose.model('users', userSchema)

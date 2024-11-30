@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
@@ -110,7 +111,7 @@ io.on("connection", (socket) => {
   
 });
 
-app.use("/api/save-code", codeRouter);
+app.use("/api/snippet", codeRouter);
 app.use("/api/auth", authRouter);
 
 app.get("/", (req, res) => {
