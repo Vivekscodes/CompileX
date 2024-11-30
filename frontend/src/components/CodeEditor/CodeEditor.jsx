@@ -3,14 +3,16 @@ import Editor from "@monaco-editor/react";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 
-import LanguageSelector from "./LanguageSelector";
-import Share from "./Share";
-import { executeCode } from "../utils/execute";
-import { LANGUAGE_BOILERPLATES } from "../utils/language";
-import { initSocket } from "../config/socket";
-import { ACTIONS } from "../Actions";
+import LanguageSelector from "../LanguageSelector";
+import Share from "../Share";
+import { executeCode } from "../../utils/execute";
+import { LANGUAGE_BOILERPLATES } from "../../utils/language";
+import { initSocket } from "../../config/socket";
+import { ACTIONS } from "../../Actions";
+// import "./CodeEditor.css";
 
 const CodeEditor = () => {
+    const [share, setShare] = useState(true);
     const [value, setValue] = useState(
         localStorage.getItem("savedCode") || LANGUAGE_BOILERPLATES["javascript"]
     );
@@ -72,7 +74,7 @@ const CodeEditor = () => {
 
     const handleCodeChange = (newValue) => {
         setValue(newValue);
-        
+
         // Emit code change to other clients in the room
         if (socketRef.current && roomId) {
             socketRef.current.emit(ACTIONS.CODE_CHANGE, {
@@ -85,7 +87,7 @@ const CodeEditor = () => {
 
     const onSelect = (selectedLanguage) => {
         setLanguage(selectedLanguage);
-        
+
         // Set default boilerplate for the selected language
         setValue(
             LANGUAGE_BOILERPLATES[selectedLanguage] || "// Write your code here"
@@ -135,21 +137,21 @@ const CodeEditor = () => {
             if (joinedUser !== username) {
                 toast.success(`${joinedUser} joined the room`);
             }
-            
+
             // Use Set to ensure unique clients
             const uniqueClients = Array.from(
                 new Set(clients.map(client => client.username))
-            ).map(username => 
+            ).map(username =>
                 clients.find(client => client.username === username)
             );
-            
+
             setClients(uniqueClients);
         });
 
         // Listen for disconnected clients
         socketRef.current.on(ACTIONS.DISCONNECTED, ({ username: disconnectedUser }) => {
             toast.success(`${disconnectedUser} left the room`);
-            setClients((prev) => 
+            setClients((prev) =>
                 prev.filter((client) => client.username !== disconnectedUser)
             );
         });
@@ -165,22 +167,56 @@ const CodeEditor = () => {
         <div>
             <Toaster position="top-right" />
             <div>
-                <h2>Collaborative Code Editor</h2>
+                <h2 style={{ textAlign: 'center', color: '#F0F0F0', fontSize: '3rem', fontWeight: 'bold' }}>Collaborative Code Editor</h2>
                 <div>
-                    <button onClick={() => setIsOpen(!isOpen)}>
+
+                    <button
+                        style={{
+                            backgroundColor: '#4CAF50',
+                            color: 'white',
+                            padding: '4px 25px',
+                            fontSize: '16px',
+                            margin: '10px',
+                            border: 'none',
+                            borderRadius: '5px'
+                        }}
+                        onClick={() => {
+                            setIsOpen(!isOpen);
+                            setShare(!share);
+                        }}
+                    >
                         {isOpen ? "Close Share" : "Share"}
                     </button>
-                    <LanguageSelector 
-                        onSelect={onSelect} 
-                        selectedLanguage={language} 
+
+                    <LanguageSelector
+                        onSelect={onSelect}
+                        selectedLanguage={language}
                     />
-                    <button onClick={run} disabled={isLoading}>
+
+                    <button
+                        style={{
+                            backgroundColor: '#4CAF50',
+                            color: 'white',
+                            padding: '4px 25px',
+                            fontSize: '16px',
+                            margin: '10px',
+                            border: 'none',
+                            borderRadius: '5px',
+                            cursor: 'pointer',
+                            boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)',
+                            transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#45a049'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = '#4CAF50'}
+                        onClick={run}
+                        disabled={isLoading}
+                    >
                         {isLoading ? "Running..." : "Run"}
                     </button>
                 </div>
 
                 <div style={{ display: 'flex', width: '100%' }}>
-                    <div style={{ width: '70%', marginRight: '10px' }}>
+                    <div style={{ width: '60%', marginRight: '10px', marginLeft: '10px', padding: '10px 20px 10px 10px' }}>
                         <Editor
                             height="75vh"
                             theme="vs-dark"
@@ -193,18 +229,18 @@ const CodeEditor = () => {
                             }}
                         />
                     </div>
-                    <div style={{ width: '30%' }}>
+                    <div style={{ width: '40%' }}>
                         <textarea
                             placeholder="User Input"
                             value={userInput}
                             onChange={(e) => setUserInput(e.target.value)}
-                            style={{ width: '100%', height: '30vh', marginBottom: '10px' }}
+                            style={{ width: '100%', height: '30vh', marginBottom: '8px', borderRadius: '5px', border: '2px solid yellow' }}
                         />
                         <textarea
                             readOnly
                             value={output}
                             placeholder="Output"
-                            style={{ width: '100%', height: '45vh' }}
+                            style={{ width: '100%', height: '43vh', borderRadius: '5px', border: '2px solid yellow', overflow: 'auto' }}
                         />
                     </div>
                 </div>
@@ -216,6 +252,7 @@ const CodeEditor = () => {
                         username={username}
                         setUsername={setUsername}
                         init={initSocketConnection}
+
                     />
                 )}
 
@@ -228,7 +265,7 @@ const CodeEditor = () => {
                     ))}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

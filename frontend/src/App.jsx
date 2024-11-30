@@ -1,16 +1,19 @@
 import React from 'react'
-import CodeEditor from './components/CodeEditor'
-import {Routes, Route} from 'react-router-dom'
-import Login from './components/Login'
-import Register from './components/Register'
+import Navbar from './components/Navbar/Navbar'
+import Main from './components/Main/Main'
+import CodeEditor from './components/CodeEditor/CodeEditor'
+import { Routes, Route } from 'react-router-dom'
 
 const App = () => {
   return (
-    <Routes>
-      <Route path='/' element={<CodeEditor />}/>
-      <Route path='/login' element={<Login />}/>
-      <Route path='/register' element={<Register />}/>
-    </Routes>
+    <div>
+      <Navbar />
+      <Routes>
+        <Route path='/' element={<Main />} />
+        <Route path='/code' element={<CodeEditor />} />
+        <Route path='/share' element={<CodeEditor />} />
+      </Routes>
+    </div>
   )
 }
 
