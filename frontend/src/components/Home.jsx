@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { v4 as uuidV4 } from "uuid";
 import { AuthContext } from "../context/AuthContext.jsx";
 import axios from "axios";
-import Navbar from "./Navbar/Navbar.jsx";
+// import Navbar from "./Navbar/Navbar.jsx";
 
 const Home = () => {
     const { user } = useContext(AuthContext);
@@ -63,16 +63,16 @@ const Home = () => {
                     onClick={handleClick}
                     className="px-3 py-2 bg-orange-500 rounded-md cursor-pointer"
                 >
-                    <i class="ri-add-fill"></i>
+                    <i className="ri-add-fill"></i>
                     <button className="justify-end">New</button>
                 </div>
             </div>
 
             {snippets.map((s) => (
-                <div className="bg-blue-300/50 backdrop-blur-sm block mx-[5%] px-5 py-3 rounded-lg border-2 border-blue-600 flex items-end gap-x-3 justify-between mb-5 relative">
+                <div key={s._id} className="bg-blue-300/50 backdrop-blur-sm block mx-[5%] px-5 py-3 rounded-lg border-2 border-blue-600 flex items-end gap-x-3 justify-between mb-5 relative">
                     <Link
                         to={`/editor/${s.codeId}`}
-                        key={s._id}
+                        
                         className="flex items-end gap-x-3"
                     >
                         <h3 className="font-semibold">{s.name}</h3>

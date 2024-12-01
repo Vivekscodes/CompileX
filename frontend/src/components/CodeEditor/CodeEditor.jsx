@@ -1,33 +1,26 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
-import { useLocation, useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 
-import LanguageSelector from "../LanguageSelector";
-import Share from "../Share";
+import LanguageSelector from "../LanguageSelector.jsx"
+import Share from "../Share"
 import { executeCode } from "../../utils/execute";
-import { LANGUAGE_BOILERPLATES, LANGUAGE_VERSIONS } from "../../utils/language";
+import { LANGUAGE_BOILERPLATES } from "../../utils/language";
 import { initSocket } from "../../config/socket";
 import { ACTIONS } from "../../Actions";
-import axios from "axios";
-import { AuthContext } from "../../context/AuthContext";
-// import "./CodeEditor.css";
+import { useLocation } from "react-router-dom";
+import { AuthContext, AuthContextProvider } from "../../context/AuthContext.jsx";
 
 const CodeEditor = () => {
-    const navigate = useNavigate();
-
-    const { user } = useContext(AuthContext);
-
-    const { pathname } = useLocation();
-    const codeId = pathname.split("/")[2];
-    const [language, setLanguage] = useState(
-        localStorage.getItem("selectedLanguage") || "javascript"
-    );
-    const [share, setShare] = useState(true);
     const [value, setValue] = useState(
         localStorage.getItem("savedCode") || LANGUAGE_BOILERPLATES["javascript"]
     );
+    const {user} = useContext(AuthContext);
+    const {pathname} = useLocation();
+    const codeId = pathname.split("/")[2];
     const [programName, setProgramName] = useState(codeId);
+
+
 
     const [output, setOutput] = useState("");
     const [userInput, setUserInput] = useState(
@@ -35,6 +28,9 @@ const CodeEditor = () => {
     );
     const [isLoading, setIsLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [language, setLanguage] = useState(
+        localStorage.getItem("selectedLanguage") || "javascript"
+    );
 
     const editorRef = useRef(null);
     const socketRef = useRef(null);
@@ -51,13 +47,14 @@ const CodeEditor = () => {
                 );
                 setValue(res.data.sourceCode);
                 setLanguage(res.data.language);
-                setProgramName(res.data.name);
+                setProgramName(res.data.name)
             } catch (error) {
                 toast.error("Error fetching code snippet");
             }
         };
         getSnippet();
     }, []);
+
 
     // Save code to localStorage whenever it changes
     useEffect(() => {
@@ -78,7 +75,6 @@ const CodeEditor = () => {
         editorRef.current = editor;
         editor.focus();
     };
-
     const run = async () => {
         setIsLoading(true);
         try {
@@ -94,7 +90,6 @@ const CodeEditor = () => {
                     userId: user._id
                 });
             } catch (e) {
-                console.error(e)
                 toast.error(e.response?.data?.message || "Couldn't save changes");
             }
             const res = await executeCode(
@@ -151,7 +146,6 @@ const CodeEditor = () => {
 
     const initSocketConnection = async () => {
         if (!user) return toast.error("Login to share code");
-
         socketRef.current = await initSocket();
 
         // Error handling
@@ -159,7 +153,8 @@ const CodeEditor = () => {
         socketRef.current.on("connect_failed", (err) => handleSocketError(err));
 
         // Join room
-        if (roomId && username) {
+        if (roomId && user.username) {
+            setUsername(user.username);
             socketRef.current.emit(ACTIONS.JOIN, { roomId, username });
         }
 
@@ -181,43 +176,35 @@ const CodeEditor = () => {
                     setLanguage(newLanguage);
                     setValue(
                         LANGUAGE_BOILERPLATES[newLanguage] ||
-                            "// Write your code here"
+                        "// Write your code here"
                     );
                 }
             }
         );
 
         // Listen for joined clients
-        socketRef.current.on(
-            ACTIONS.JOINED,
-            ({ clients, username: joinedUser }) => {
-                if (joinedUser !== username) {
-                    toast.success(`${joinedUser} joined the room`);
-                }
-
-                // Use Set to ensure unique clients
-                const uniqueClients = Array.from(
-                    new Set(clients.map((client) => client.username))
-                ).map((username) =>
-                    clients.find((client) => client.username === username)
-                );
-
-                setClients(uniqueClients);
+        socketRef.current.on(ACTIONS.JOINED, ({ clients, username: joinedUser }) => {
+            if (joinedUser !== username) {
+                toast.success(`${joinedUser} joined the room`);
             }
-        );
+
+            // Use Set to ensure unique clients
+            const uniqueClients = Array.from(
+                new Set(clients.map(client => client.username))
+            ).map(username =>
+                clients.find(client => client.username === username)
+            );
+
+            setClients(uniqueClients);
+        });
 
         // Listen for disconnected clients
-        socketRef.current.on(
-            ACTIONS.DISCONNECTED,
-            ({ username: disconnectedUser }) => {
-                toast.success(`${disconnectedUser} left the room`);
-                setClients((prev) =>
-                    prev.filter(
-                        (client) => client.username !== disconnectedUser
-                    )
-                );
-            }
-        );
+        socketRef.current.on(ACTIONS.DISCONNECTED, ({ username: disconnectedUser }) => {
+            toast.success(`${disconnectedUser} left the room`);
+            setClients((prev) =>
+                prev.filter((client) => client.username !== disconnectedUser)
+            );
+        });
     };
 
     const handleSocketError = (err) => {
@@ -230,42 +217,11 @@ const CodeEditor = () => {
         <div>
             <Toaster position="top-right" />
             <div>
-                <h2
-                    style={{
-                        textAlign: "center",
-                        color: "#F0F0F0",
-                        fontSize: "3rem",
-                        fontWeight: "bold",
-                    }}
-                >
-                    Collaborative Code Editor
-                </h2>
+                <h2 style={{ textAlign: 'center', color: '#F0F0F0', fontSize: '3rem', fontWeight: 'bold' }}>Collaborative Code Editor</h2>
                 <div>
-                <input
-                        type="text"
-                        name="name"
-                        value={programName}
-                        onChange={(e) => setProgramName(e.target.value)}
-                        className="bg-gray-500 p-2"
-                    />
-                    <button
-                        style={{
-                            backgroundColor: "#4CAF50",
-                            color: "white",
-                            padding: "4px 25px",
-                            fontSize: "16px",
-                            margin: "10px",
-                            border: "none",
-                            borderRadius: "5px",
-                        }}
-                        onClick={() => {
-                            setIsOpen(!isOpen);
-                            setShare(!share);
-                        }}
-                    >
+                    <button onClick={() => setIsOpen(!isOpen)}>
                         {isOpen ? "Close Share" : "Share"}
                     </button>
-
                     <LanguageSelector
                         onSelect={onSelect}
                         selectedLanguage={language}
@@ -273,23 +229,19 @@ const CodeEditor = () => {
 
                     <button
                         style={{
-                            backgroundColor: "#4CAF50",
-                            color: "white",
-                            padding: "4px 25px",
-                            fontSize: "16px",
-                            margin: "10px",
-                            border: "none",
-                            borderRadius: "5px",
-                            cursor: "pointer",
-                            boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
-                            transition: "background-color 0.2s ease",
+                            backgroundColor: '#4CAF50',
+                            color: 'white',
+                            padding: '4px 25px',
+                            fontSize: '16px',
+                            margin: '10px',
+                            border: 'none',
+                            borderRadius: '5px',
+                            cursor: 'pointer',
+                            boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)',
+                            transition: 'background-color 0.2s ease'
                         }}
-                        onMouseEnter={(e) =>
-                            (e.target.style.backgroundColor = "#45a049")
-                        }
-                        onMouseLeave={(e) =>
-                            (e.target.style.backgroundColor = "#4CAF50")
-                        }
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#45a049'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = '#4CAF50'}
                         onClick={run}
                         disabled={isLoading}
                     >
@@ -297,15 +249,8 @@ const CodeEditor = () => {
                     </button>
                 </div>
 
-                <div style={{ display: "flex", width: "100%" }}>
-                    <div
-                        style={{
-                            width: "60%",
-                            marginRight: "10px",
-                            marginLeft: "10px",
-                            padding: "10px 20px 10px 10px",
-                        }}
-                    >
+                <div style={{ display: 'flex', width: '100%' }}>
+                    <div style={{ width: '70%', marginRight: '10px' }}>
                         <Editor
                             height="75vh"
                             theme="vs-dark"
@@ -318,30 +263,18 @@ const CodeEditor = () => {
                             }}
                         />
                     </div>
-                    <div style={{ width: "40%" }}>
+                    <div style={{ width: '30%' }}>
                         <textarea
                             placeholder="User Input"
                             value={userInput}
                             onChange={(e) => setUserInput(e.target.value)}
-                            style={{
-                                width: "100%",
-                                height: "30vh",
-                                marginBottom: "8px",
-                                borderRadius: "5px",
-                                border: "2px solid yellow",
-                            }}
+                            style={{ width: '100%', height: '30vh', marginBottom: '10px' }}
                         />
                         <textarea
                             readOnly
                             value={output}
                             placeholder="Output"
-                            style={{
-                                width: "100%",
-                                height: "43vh",
-                                borderRadius: "5px",
-                                border: "2px solid yellow",
-                                overflow: "auto",
-                            }}
+                            style={{ width: '100%', height: '45vh' }}
                         />
                     </div>
                 </div>
@@ -353,6 +286,7 @@ const CodeEditor = () => {
                         username={username}
                         setUsername={setUsername}
                         init={initSocketConnection}
+
                     />
                 )}
 
@@ -363,7 +297,7 @@ const CodeEditor = () => {
                     ))}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 
