@@ -1,25 +1,24 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 
-import LanguageSelector from "../LanguageSelector";
-import Share from "../Share";
-import { executeCode } from "../../utils/execute";
-import { LANGUAGE_BOILERPLATES } from "../../utils/language";
-import { initSocket } from "../../config/socket";
-import { ACTIONS } from "../../Actions";
-// import "./CodeEditor.css";
+import LanguageSelector from "./LanguageSelector"
+import Share from "./Share"
+import { executeCode } from "../utils/execute";
+import { LANGUAGE_BOILERPLATES } from "../utils/language";
+import { initSocket } from "../config/socket";
+import { ACTIONS } from "../Actions";
 
 const CodeEditor = () => {
-    const [share, setShare] = useState(true);
     const [value, setValue] = useState(
         localStorage.getItem("savedCode") || LANGUAGE_BOILERPLATES["javascript"]
     );
+    const [programName, setProgramName] = useState(codeId);
+
+
+
     const [output, setOutput] = useState("");
-    const [language, setLanguage] = useState(
-        localStorage.getItem("selectedLanguage") || "javascript"
-    );
     const [userInput, setUserInput] = useState(
         localStorage.getItem("userInput") || ""
     );
@@ -33,7 +32,22 @@ const CodeEditor = () => {
     const [username, setUsername] = useState("");
     const [clients, setClients] = useState([]);
 
-    const navigate = useNavigate();
+    useEffect(() => {
+        const getSnippet = async () => {
+            try {
+                const res = await axios.get(
+                    `http://localhost:3000/api/snippet/${codeId}`
+                );
+                setValue(res.data.sourceCode);
+                setLanguage(res.data.language);
+                setProgramName(res.data.name)
+            } catch (error) {
+                toast.error("Error fetching code snippet");
+            }
+        };
+        getSnippet();
+    }, []);
+
 
     // Save code to localStorage whenever it changes
     useEffect(() => {
@@ -54,10 +68,23 @@ const CodeEditor = () => {
         editorRef.current = editor;
         editor.focus();
     };
-
     const run = async () => {
         setIsLoading(true);
         try {
+            try {
+                await axios.post("http://localhost:3000/api/snippet", {
+                    codeId,
+                    name: programName,
+                    language,
+                    sourceCode: editorRef.current.getValue(),
+                    version: LANGUAGE_VERSIONS[language],
+                    input: userInput,
+                    output,
+                    userId: user._id
+                });
+            } catch (e) {
+                toast.error(e.response?.data?.message || "Couldn't save changes");
+            }
             const res = await executeCode(
                 language,
                 editorRef.current.getValue(),
@@ -80,7 +107,7 @@ const CodeEditor = () => {
             socketRef.current.emit(ACTIONS.CODE_CHANGE, {
                 roomId,
                 code: newValue,
-                username
+                username,
             });
         }
     };
@@ -98,12 +125,20 @@ const CodeEditor = () => {
             socketRef.current.emit(ACTIONS.LANGUAGE_CHANGE, {
                 roomId,
                 language: selectedLanguage,
-                username
+                username: user.username,
             });
         }
     };
 
+    useEffect(() => {
+        if (user) {
+            // Set initial username and room details
+            setUsername(user.username);
+        }
+    }, [user]);
+
     const initSocketConnection = async () => {
+        if (!user) return toast.error("Login to share code");
         socketRef.current = await initSocket();
 
         // Error handling
@@ -111,26 +146,34 @@ const CodeEditor = () => {
         socketRef.current.on("connect_failed", (err) => handleSocketError(err));
 
         // Join room
-        if (roomId && username) {
+        if (roomId && user.username) {
+            setUsername(user.username);
             socketRef.current.emit(ACTIONS.JOIN, { roomId, username });
         }
 
         // Listen for code changes from other clients
-        socketRef.current.on(ACTIONS.CODE_CHANGE, ({ code, username: sender }) => {
-            if (sender !== username) {
-                setValue(code);
+        socketRef.current.on(
+            ACTIONS.CODE_CHANGE,
+            ({ code, username: sender }) => {
+                if (sender !== username) {
+                    setValue(code);
+                }
             }
-        });
+        );
 
         // Listen for language changes from other clients
-        socketRef.current.on(ACTIONS.LANGUAGE_CHANGE, ({ language: newLanguage, username: sender }) => {
-            if (sender !== username) {
-                setLanguage(newLanguage);
-                setValue(
-                    LANGUAGE_BOILERPLATES[newLanguage] || "// Write your code here"
-                );
+        socketRef.current.on(
+            ACTIONS.LANGUAGE_CHANGE,
+            ({ language: newLanguage, username: sender }) => {
+                if (sender !== username) {
+                    setLanguage(newLanguage);
+                    setValue(
+                        LANGUAGE_BOILERPLATES[newLanguage] ||
+                        "// Write your code here"
+                    );
+                }
             }
-        });
+        );
 
         // Listen for joined clients
         socketRef.current.on(ACTIONS.JOINED, ({ clients, username: joinedUser }) => {
@@ -169,25 +212,9 @@ const CodeEditor = () => {
             <div>
                 <h2 style={{ textAlign: 'center', color: '#F0F0F0', fontSize: '3rem', fontWeight: 'bold' }}>Collaborative Code Editor</h2>
                 <div>
-
-                    <button
-                        style={{
-                            backgroundColor: '#4CAF50',
-                            color: 'white',
-                            padding: '4px 25px',
-                            fontSize: '16px',
-                            margin: '10px',
-                            border: 'none',
-                            borderRadius: '5px'
-                        }}
-                        onClick={() => {
-                            setIsOpen(!isOpen);
-                            setShare(!share);
-                        }}
-                    >
+                    <button onClick={() => setIsOpen(!isOpen)}>
                         {isOpen ? "Close Share" : "Share"}
                     </button>
-
                     <LanguageSelector
                         onSelect={onSelect}
                         selectedLanguage={language}
@@ -216,7 +243,7 @@ const CodeEditor = () => {
                 </div>
 
                 <div style={{ display: 'flex', width: '100%' }}>
-                    <div style={{ width: '60%', marginRight: '10px', marginLeft: '10px', padding: '10px 20px 10px 10px' }}>
+                    <div style={{ width: '70%', marginRight: '10px' }}>
                         <Editor
                             height="75vh"
                             theme="vs-dark"
@@ -229,18 +256,18 @@ const CodeEditor = () => {
                             }}
                         />
                     </div>
-                    <div style={{ width: '40%' }}>
+                    <div style={{ width: '30%' }}>
                         <textarea
                             placeholder="User Input"
                             value={userInput}
                             onChange={(e) => setUserInput(e.target.value)}
-                            style={{ width: '100%', height: '30vh', marginBottom: '8px', borderRadius: '5px', border: '2px solid yellow' }}
+                            style={{ width: '100%', height: '30vh', marginBottom: '10px' }}
                         />
                         <textarea
                             readOnly
                             value={output}
                             placeholder="Output"
-                            style={{ width: '100%', height: '43vh', borderRadius: '5px', border: '2px solid yellow', overflow: 'auto' }}
+                            style={{ width: '100%', height: '45vh' }}
                         />
                     </div>
                 </div>
@@ -259,9 +286,7 @@ const CodeEditor = () => {
                 <div>
                     <h3>Connected Clients:</h3>
                     {clients.map((client) => (
-                        <div key={client.socketId}>
-                            {client.username}
-                        </div>
+                        <div key={client.socketId}>{client.username}</div>
                     ))}
                 </div>
             </div>

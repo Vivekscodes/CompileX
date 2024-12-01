@@ -1,7 +1,7 @@
 import React from 'react'
-import Navbar from './components/Navbar/Navbar'
-import Main from './components/Main/Main'
-import CodeEditor from './components/CodeEditor/CodeEditor'
+import Navbar from './components/Navbar'
+import Main from './components/Main'
+import CodeEditor from './components/CodeEditor'
 import { Routes, Route } from 'react-router-dom'
 
 const App = () => {

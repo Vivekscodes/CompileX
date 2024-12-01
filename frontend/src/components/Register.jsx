@@ -10,16 +10,15 @@ const Register = () => {
         setCredentials({ ...credentials, [e.target.name]: e.target.value });
     };
 
+    console.log(credentials);
     const handleRegister = async (e) => {
         e.preventDefault();
         try {
             const res = await axios.post(
                 "http://localhost:3000/api/auth/register",
-                {
-                    credentials,
-                }
+                credentials
             );
-            navigate('/')
+            navigate("/");
         } catch (err) {
             console.log(err);
         }
