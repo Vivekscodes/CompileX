@@ -72,7 +72,7 @@ const Home = () => {
                 <div key={s._id} className="bg-blue-300/50 backdrop-blur-sm block mx-[5%] px-5 py-3 rounded-lg border-2 border-blue-600 flex items-end gap-x-3 justify-between mb-5 relative">
                     <Link
                         to={`/editor/${s.codeId}`}
-                        
+
                         className="flex items-end gap-x-3"
                     >
                         <h3 className="font-semibold">{s.name}</h3>
@@ -87,7 +87,16 @@ const Home = () => {
                                     Edit
                                 </Link>
                                 <li className="hover:bg-gray-800 cursor-pointer px-3 py-2 rounded-md">
-                                    Delete
+                                    <li className="hover:bg-gray-800 cursor-pointer px-3 py-2 rounded-md" onClick={async () => {
+                                        try {
+                                            await axios.delete(`http://localhost:3000/api/snippet/${s._id}`);
+                                            setSnippets(snippets.filter((snippet) => snippet._id !== s._id));
+                                        } catch (error) {
+                                            console.error(error);
+                                        }
+                                    }}>
+                                        Delete
+                                    </li>
                                 </li>
                             </ul>
                         </div>

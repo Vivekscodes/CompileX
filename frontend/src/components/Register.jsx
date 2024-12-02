@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./Register.css";
 
 const Register = () => {
     const [credentials, setCredentials] = useState({});
@@ -25,9 +26,9 @@ const Register = () => {
     };
 
     return (
-        <form action="">
+        <form className="register-form">
             <label htmlFor="username">
-                Username :
+                Username:
                 <input
                     type="text"
                     name="username"
@@ -36,7 +37,7 @@ const Register = () => {
                 />
             </label>
             <label htmlFor="email">
-                Email :
+                Email:
                 <input
                     type="email"
                     name="email"
@@ -45,7 +46,7 @@ const Register = () => {
                 />
             </label>
             <label htmlFor="password">
-                password :
+                Password :
                 <input
                     type="password"
                     name="password"

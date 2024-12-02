@@ -1,14 +1,14 @@
 import React, { useContext, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import axios from 'axios'
-import {useNavigate} from 'react-router-dom'
-
+import { useNavigate } from 'react-router-dom'
+import "./Login.css";
 const Login = () => {
     const { loading, error, dispatch } = useContext(AuthContext);
     const [credentials, setCredentials] = useState({})
 
     const handleChange = (e) => {
-        setCredentials({...credentials, [e.target.name]: e.target.value });
+        setCredentials({ ...credentials, [e.target.name]: e.target.value });
     };
 
     console.log(credentials)
@@ -34,19 +34,17 @@ const Login = () => {
         }
     };
     return (
-        <form action="">
-          {error && <p>{error}</p>}
-            <label htmlFor="username">
-                Username :
+        <form className="login-form" onSubmit={handleLogin}>
+            {error && <p className="error-message">{error}</p>}
+            <div className="form-group">
+                <label htmlFor="username">Username:</label>
                 <input type="text" name="username" onChange={handleChange} required />
-            </label>
-            <label htmlFor="password">
-                password :
+            </div>
+            <div className="form-group">
+                <label htmlFor="password">Password:</label>
                 <input type="password" name="password" onChange={handleChange} required />
-            </label>
-            <button type="submit" onClick={handleLogin}>
-                Login
-            </button>
+            </div>
+            <button type="submit" className="submit-button">Login</button>
         </form>
     );
 };

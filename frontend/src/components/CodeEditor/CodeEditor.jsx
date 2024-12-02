@@ -5,18 +5,19 @@ import toast, { Toaster } from "react-hot-toast";
 import LanguageSelector from "../LanguageSelector.jsx"
 import Share from "../Share"
 import { executeCode } from "../../utils/execute";
-import { LANGUAGE_BOILERPLATES } from "../../utils/language";
+import { LANGUAGE_BOILERPLATES, LANGUAGE_VERSIONS } from "../../utils/language";
 import { initSocket } from "../../config/socket";
 import { ACTIONS } from "../../Actions";
 import { useLocation } from "react-router-dom";
 import { AuthContext, AuthContextProvider } from "../../context/AuthContext.jsx";
+import axios from "axios";
 
 const CodeEditor = () => {
     const [value, setValue] = useState(
         localStorage.getItem("savedCode") || LANGUAGE_BOILERPLATES["javascript"]
     );
-    const {user} = useContext(AuthContext);
-    const {pathname} = useLocation();
+    const { user } = useContext(AuthContext);
+    const { pathname } = useLocation();
     const codeId = pathname.split("/")[2];
     const [programName, setProgramName] = useState(codeId);
 
@@ -79,17 +80,22 @@ const CodeEditor = () => {
         setIsLoading(true);
         try {
             try {
-                await axios.post("http://localhost:3000/api/snippet", {
-                    codeId,
-                    name: programName,
-                    language,
-                    sourceCode: editorRef.current.getValue(),
-                    version: LANGUAGE_VERSIONS[language],
-                    input: userInput,
-                    output,
-                    userId: user._id
-                });
+                if (user) {
+
+
+                    await axios.post("http://localhost:3000/api/snippet", {
+                        codeId,
+                        name: programName,
+                        language,
+                        sourceCode: editorRef.current.getValue(),
+                        version: LANGUAGE_VERSIONS[language],
+                        input: userInput,
+                        output,
+                        userId: user._id
+                    });
+                }
             } catch (e) {
+                console.error(e)
                 toast.error(e.response?.data?.message || "Couldn't save changes");
             }
             const res = await executeCode(
@@ -217,9 +223,24 @@ const CodeEditor = () => {
         <div>
             <Toaster position="top-right" />
             <div>
-                <h2 style={{ textAlign: 'center', color: '#F0F0F0', fontSize: '3rem', fontWeight: 'bold' }}>Collaborative Code Editor</h2>
-                <div>
-                    <button onClick={() => setIsOpen(!isOpen)}>
+                <h2 style={{ textAlign: 'center', color: '#F0F0F0', fontSize: '2.5rem', fontWeight: 'bold' }}>Collaborative Code Editor</h2>                <div>
+                    <button
+                        style={{
+                            backgroundColor: '#4CAF50',
+                            color: 'white',
+                            padding: '4px 25px',
+                            fontSize: '16px',
+                            margin: '10px',
+                            border: 'none',
+                            borderRadius: '5px',
+                            cursor: 'pointer',
+                            boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)',
+                            transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#45a049'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = '#4CAF50'}
+                        onClick={() => setIsOpen(!isOpen)}
+                    >
                         {isOpen ? "Close Share" : "Share"}
                     </button>
                     <LanguageSelector
@@ -247,6 +268,16 @@ const CodeEditor = () => {
                     >
                         {isLoading ? "Running..." : "Run"}
                     </button>
+                    <input
+                        type="text"
+                        placeholder="Project Name"
+                        style={{
+                            padding: '10px',
+                            margin: '10px 0',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px'
+                        }}
+                    />
                 </div>
 
                 <div style={{ display: 'flex', width: '100%' }}>
@@ -290,10 +321,24 @@ const CodeEditor = () => {
                     />
                 )}
 
-                <div>
-                    <h3>Connected Clients:</h3>
+                <div style={{ width: '300px', padding: '10px', borderRadius: '5px', backgroundColor: '#f0f0f0' }}>
+                    <h3 style={{ color: '#4CAF50', fontSize: '20px', marginBottom: '10px' }}>Connected Clients:</h3>
                     {clients.map((client) => (
-                        <div key={client.socketId}>{client.username}</div>
+                        <div
+                            key={client.socketId}
+                            style={{
+                                backgroundColor: '#f0f0f0',
+                                padding: '10px',
+                                margin: '5px 0',
+                                borderRadius: '5px',
+                                boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+                                textAlign: 'center',
+                                fontWeight: 'bold',
+                                color: '#333'
+                            }}
+                        >
+                            {client.username}
+                        </div>
                     ))}
                 </div>
             </div>
