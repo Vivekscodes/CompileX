@@ -277,6 +277,8 @@ const CodeEditor = () => {
                             border: '1px solid #ccc',
                             borderRadius: '4px'
                         }}
+                        value={programName}
+                        onChange={e => setProgramName(e.target.value)}
                     />
                 </div>
 
