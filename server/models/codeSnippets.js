@@ -1,14 +1,29 @@
-const mongoose = require('mongoose');
+```typescript
+import mongoose, { Schema, Types } from 'mongoose';
 
-const codeSchema = mongoose.Schema({
-    name:{
-        type:String,
-        required: true,
-    },
-    codeId:{
+// Define the CodeSnippet interface for TypeScript
+interface ICodeSnippet {
+    name: string;
+    codeId: string;
+    language: string;
+    version: string;
+    sourceCode: string;
+    userId: Types.ObjectId; // Use Types.ObjectId for clarity
+    input?: string; // Optional input
+    output?: string; // Optional output
+    createdAt: Date;
+}
+
+
+const codeSchema = new Schema<ICodeSnippet>({
+    name: {
         type: String,
         required: true,
-        unique: true
+    },
+    codeId: {
+        type: String,
+        required: true,
+        unique: true,
     },
     language: {
         type: String,
@@ -22,14 +37,27 @@ const codeSchema = mongoose.Schema({
         type: String,
         required: true,
     },
-    userId: { 
-        type: mongoose.Schema.Types.ObjectId, 
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'users', // Reference to the users model
-        required: true 
+        required: true,
     },
-    input: String,
-    output: String,
-    createdAt: { type: Date, default: Date.now }
-})
+    input: {
+        type: String,
+        default: null // Make it explicitly nullable
+    },
+    output: {
+        type: String,
+        default: null // Make it explicitly nullable
+    },
+    createdAt: { 
+        type: Date, 
+        default: Date.now 
+    }
+});
 
-module.exports = mongoose.model('CodeSnippets', codeSchema);
+// Create and export the CodeSnippet model
+const CodeSnippet = mongoose.model<ICodeSnippet>('CodeSnippets', codeSchema);
+
+export default CodeSnippet;
+```
